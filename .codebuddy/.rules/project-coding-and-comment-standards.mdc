@@ -1,0 +1,1184 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2025-12-10T15:09:54.843Z
+provider: 
+---
+
+# 项目代码和注释规范
+
+## 适用范围
+适用于 wuzhi 项目的所有代码编写，包括 Kotlin Spring Boot 后端和 Vue.js 前端的代码和注释规范。
+
+## 总则
+
+### 1. 代码可读性原则
+- 代码应当自文档化，注释应解释"为什么"而非"是什么"
+- 遵循语言和框架的官方编码规范
+- 保持代码风格一致性
+- 优先使用清晰的表达而非巧妙的技巧
+
+### 2. 注释原则
+- 注释必须与代码保持同步更新
+- 避免注释过多的显而易见的代码
+- 注释应当准确、简洁、清晰
+- 使用统一的注释格式和语言（中文）
+
+## 后端 Kotlin 代码规范
+
+### 1. 文件和类注释规范
+
+#### 1.1 文件头注释
+每个 Kotlin 文件都应包含文件头注释：
+
+```kotlin
+/**
+ * [功能模块描述]
+ * 
+ * @author [作者名]
+ * @since [创建日期]
+ * @version [版本号]
+ */
+package com.wuzhi.server.xxx
+
+// 导入语句
+```
+
+#### 1.2 类注释
+```kotlin
+/**
+ * [类功能简述]
+ * 
+ * 详细描述类的职责、使用场景、设计思路等。
+ * 可以包含使用示例或重要的设计决策说明。
+ * 
+ * @param [构造函数参数描述]
+ * @property [属性描述]
+ * @see [相关类或文档]
+ * @since [创建时间]
+ */
+@Service
+class UserServiceImpl(
+    private val userRepository: UserRepository,
+    private val passwordUtil: PasswordUtil
+) : UserService {
+    // 类实现
+}
+```
+
+#### 1.3 接口注释
+```kotlin
+/**
+ * [接口功能简述]
+ * 
+ * 定义了[具体功能]的相关操作接口。
+ * 实现类应当遵循[特定的行为约定]。
+ * 
+ * @author [作者名]
+ * @since [创建时间]
+ */
+interface UserService {
+    /**
+     * [方法功能简述]
+     * 
+     * 详细描述方法的行为、参数要求、返回值格式、
+     * 可能抛出的异常等。
+     * 
+     * @param username 用户名，长度限制3-50个字符
+     * @param password 密码，必须经过加密
+     * @return 用户信息DTO，不包含敏感信息
+     * @throws BusinessException 当用户名已存在时抛出
+     * @throws ValidationException 当参数验证失败时抛出
+     */
+    fun createUser(username: String, password: String): UserDTO
+}
+```
+
+### 2. 方法注释规范
+
+#### 2.1 公共方法注释
+```kotlin
+/**
+ * 验证用户登录凭证
+ * 
+ * 根据提供的用户名和密码验证用户身份，验证成功后
+ * 生成JWT令牌并返回用户信息。此方法会记录登录日志，
+ * 对于多次失败的登录尝试会触发安全预警。
+ * 
+ * @param loginDTO 登录信息，包含用户名和密码
+ * @return 登录结果，包含用户信息和JWT令牌
+ * @throws AuthenticationException 当认证失败时抛出
+ * @throws AccountLockedException 当账户被锁定时抛出
+ */
+fun authenticateUser(loginDTO: LoginDTO): AuthResult {
+    // 实现逻辑
+}
+```
+
+#### 2.2 私有方法注释
+```kotlin
+// 生成JWT令牌，设置有效期24小时
+private fun generateToken(user: User): String {
+    return JwtUtil.generate(user.id, user.username, Duration.ofHours(24))
+}
+
+// 检查密码强度，必须包含字母、数字和特殊字符
+private fun validatePasswordStrength(password: String): Boolean {
+    return password.matches(Regex("^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,}$"))
+}
+```
+
+### 3. 字段和常量注释规范
+
+```kotlin
+class UserPO {
+    /**
+     * 用户唯一标识符
+     * 格式：UUID v4
+     */
+    @TableId("id")
+    val id: String? = null
+    
+    /**
+     * 用户名
+     * 长度限制：3-50个字符
+     * 唯一约束：全局唯一
+     */
+    @TableField("username")
+    val username: String,
+    
+    /**
+     * 密码哈希值
+     * 存储格式：BCrypt
+     * 永远不要明文存储密码
+     */
+    @TableField("password_hash")
+    val passwordHash: String
+}
+
+companion object {
+    /** 用户名最小长度 */
+    const val MIN_USERNAME_LENGTH = 3
+    
+    /** 用户名最大长度 */
+    const val MAX_USERNAME_LENGTH = 50
+    
+    /** JWT令牌默认有效期（小时） */
+    const val TOKEN_DEFAULT_EXPIRE_HOURS = 24
+}
+```
+
+### 4. MyBatis-Plus 数据库操作规范
+
+#### 4.1 基本原则
+- **强制使用 MyBatis-Plus**：所有单表数据库操作必须使用 MyBatis-Plus 提供的 API
+- **禁止显式 SQL**：除多表联查外，严禁在代码中编写显式 SQL 语句
+- **优先使用内置方法**：充分利用 MyBatis-Plus 的内置 CRUD 方法
+- **统一使用注解配置**：实体类映射关系使用注解而非 XML 配置
+
+#### 4.2 实体类注解规范
+
+```kotlin
+/**
+ * 用户实体类
+ * 
+ * 对应数据库表 data_user，存储用户基本信息和认证相关数据。
+ * 使用 MyBatis-Plus 注解进行 ORM 映射配置。
+ */
+@TableName("data_user") // 必须指定表名
+data class UserPO(
+    /**
+     * 用户唯一标识符
+     * 使用雪花算法生成的主键
+     */
+    @TableId(value = "id", type = IdType.ASSIGN_ID) // 必须指定主键和生成策略
+    val id: String? = null,
+    
+    /**
+     * 用户名
+     * 全局唯一，用于登录认证
+     */
+    @TableField("username") // 必须指定字段名
+    val username: String,
+    
+    /**
+     * 密码哈希值
+     * BCrypt 加密存储
+     */
+    @TableField("password_hash")
+    val passwordHash: String,
+    
+    /**
+     * 邮箱地址
+     * 可选字段，用于找回密码
+     */
+    @TableField("email")
+    val email: String? = null,
+    
+    /**
+     * 用户状态
+     * 0-正常 1-禁用 2-已删除
+     */
+    @TableField("status")
+    val status: Int = 0,
+    
+    /**
+     * 创建时间
+     * 自动填充当前时间
+     */
+    @TableField(value = "create_time", fill = FieldFill.INSERT)
+    val createTime: LocalDateTime? = null,
+    
+    /**
+     * 更新时间
+     * 自动填充当前时间
+     */
+    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
+    val updateTime: LocalDateTime? = null
+) {
+    companion object {
+        /** 用户名最大长度 */
+        const val MAX_USERNAME_LENGTH = 50
+        
+        /** 邮箱最大长度 */
+        const val MAX_EMAIL_LENGTH = 100
+        
+        /** 用户状态：正常 */
+        const val STATUS_NORMAL = 0
+        
+        /** 用户状态：禁用 */
+        const val STATUS_DISABLED = 1
+        
+        /** 用户状态：已删除 */
+        const val STATUS_DELETED = 2
+    }
+}
+```
+
+#### 4.3 Mapper 接口规范
+
+```kotlin
+/**
+ * 用户数据访问层
+ * 
+ * 继承 BaseMapper 获得 MyBatis-Plus 的基础 CRUD 功能。
+ * 自定义方法仅用于复杂查询，避免编写显式 SQL。
+ */
+@Mapper
+interface UserMapper : BaseMapper<UserPO> {
+    
+    /**
+     * 根据用户名查询用户
+     * 
+     * 使用 MyBatis-Plus 的 QueryWrapper 构建查询条件，
+     * 避免编写显式 SQL 语句。
+     * 
+     * @param username 用户名
+     * @return 用户实体，未找到时返回 null
+     */
+    fun selectByUsername(username: String): UserPO? {
+        val queryWrapper = QueryWrapper<UserPO>()
+        queryWrapper.eq("username", username)
+            .eq("status", STATUS_NORMAL) // 只查询正常状态的用户
+        return selectOne(queryWrapper)
+    }
+    
+    /**
+     * 分页查询用户列表
+     * 
+     * 使用 MyBatis-Plus 分页插件实现分页查询，
+     * 支持动态条件组合。
+     * 
+     * @param page 分页参数
+     * @param username 用户名模糊查询
+     * @param status 用户状态精确查询
+     * @return 分页结果
+     */
+    fun selectUserPage(
+        page: Page<UserPO>, 
+        username: String?, 
+        status: Int?
+    ): Page<UserPO> {
+        val queryWrapper = QueryWrapper<UserPO>()
+        
+        // 动态添加查询条件
+        username?.let {
+            queryWrapper.like("username", it)
+        }
+        status?.let {
+            queryWrapper.eq("status", it)
+        }
+        
+        queryWrapper.orderByDesc("create_time") // 按创建时间倒序
+        
+        return selectPage(page, queryWrapper)
+    }
+    
+    // 多表联查时才使用 @Select 注解
+    /**
+     * 查询用户及其角色信息（多表联查示例）
+     * 
+     * 仅在多表联查时允许使用显式 SQL，
+     * 单表操作严禁使用 @Select 注解。
+     */
+    @Select("""
+        SELECT u.*, r.role_name 
+        FROM data_user u 
+        LEFT JOIN user_role ur ON u.id = ur.user_id 
+        LEFT JOIN role r ON ur.role_id = r.id 
+        WHERE u.id = #{userId} AND u.status = 0
+    """)
+    fun selectUserWithRoles(@Param("userId") userId: String): UserWithRolesVO?
+}
+```
+
+#### 4.4 Service 层 MyBatis-Plus 使用规范
+
+```kotlin
+/**
+ * 用户服务实现类
+ * 
+ * 演示 MyBatis-Plus 的正确使用方式，
+ * 优先使用内置方法，避免编写显式 SQL。
+ */
+@Service
+class UserServiceImpl(
+    private val userMapper: UserMapper
+) : UserService {
+    
+    /**
+     * 创建用户
+     * 
+     * 使用 MyBatis-Plus 的 insert 方法，
+     * 自动填充创建时间和更新时间。
+     */
+    override fun createUser(userDTO: UserDTO): UserDTO {
+        val userPO = UserPO(
+            username = userDTO.username,
+            passwordHash = PasswordUtil.encrypt(userDTO.password),
+            email = userDTO.email
+        )
+        
+        // 使用 MyBatis-Plus 内置方法插入数据
+        userMapper.insert(userPO)
+        
+        return userDTO.copy(id = userPO.id!!)
+    }
+    
+    /**
+     * 根据ID查询用户
+     * 
+     * 直接使用 MyBatis-Plus 的 selectById 方法。
+     */
+    override fun getUserById(id: String): UserDTO? {
+        return userMapper.selectById(id)?.let { userPO ->
+            UserDTO(
+                id = userPO.id!!,
+                username = userPO.username,
+                email = userPO.email,
+                status = userPO.status
+            )
+        }
+    }
+    
+    /**
+     * 更新用户信息
+     * 
+     * 使用 MyBatis-Plus 的 updateById 方法，
+     * 自动填充更新时间。
+     */
+    override fun updateUser(id: String, userDTO: UserDTO): Boolean {
+        val updateWrapper = LambdaUpdateWrapper<UserPO>()
+            .eq(UserPO::id, id)
+            .set(UserPO::username, userDTO.username)
+            .set(UserPO::email, userDTO.email)
+        
+        return userMapper.update(null, updateWrapper) > 0
+    }
+    
+    /**
+     * 根据条件查询用户列表
+     * 
+     * 使用 QueryWrapper 构建复杂查询条件，
+     * 避免编写显式 SQL。
+     */
+    override fun findUsers(userQuery: UserQueryDTO): List<UserDTO> {
+        val queryWrapper = QueryWrapper<UserPO>()
+        
+        // 多条件动态查询
+        userQuery.username?.let {
+            queryWrapper.like("username", it)
+        }
+        userQuery.email?.let {
+            queryWrapper.eq("email", it)
+        }
+        userQuery.status?.let {
+            queryWrapper.eq("status", it)
+        }
+        
+        // 排序
+        userQuery.sortBy?.let { sortBy ->
+            val sortOrder = if (userQuery.isAsc) "ASC" else "DESC"
+            queryWrapper.orderBy(true, userQuery.isAsc, sortBy)
+        } ?: queryWrapper.orderByDesc("create_time")
+        
+        return userMapper.selectList(queryWrapper).map { userPO ->
+            UserDTO(
+                id = userPO.id!!,
+                username = userPO.username,
+                email = userPO.email,
+                status = userPO.status
+            )
+        }
+    }
+    
+    /**
+     * 批量更新用户状态
+     * 
+     * 使用 UpdateWrapper 进行批量更新，
+     * 避免循环调用单个更新方法。
+     */
+    override fun batchUpdateStatus(userIds: List<String>, status: Int): Boolean {
+        if (userIds.isEmpty()) return true
+        
+        val updateWrapper = UpdateWrapper<UserPO>()
+            .`in`("id", userIds)
+            .set("status", status)
+        
+        return userMapper.update(null, updateWrapper) > 0
+    }
+    
+    /**
+     * 统计用户数量
+     * 
+     * 使用 QueryWrapper 的 count 方法，
+     * 避免编写 COUNT SQL。
+     */
+    override fun countUsersByStatus(status: Int): Long {
+        val queryWrapper = QueryWrapper<UserPO>()
+            .eq("status", status)
+        return userMapper.selectCount(queryWrapper)
+    }
+}
+```
+
+#### 4.5 MyBatis-Plus 配置规范
+
+```kotlin
+/**
+ * MyBatis-Plus 配置类
+ * 
+ * 配置分页插件、逻辑删除、自动填充等功能。
+ */
+@Configuration
+@ConfigurationPropertiesScan("com.wuzhi.server.property")
+class MybatisPlusConfig {
+    
+    /**
+     * 分页插件配置
+     */
+    @Bean
+    fun mybatisPlusInterceptor(): MybatisPlusInterceptor {
+        return MybatisPlusInterceptor().apply {
+            // 添加分页插件
+            addInnerInterceptor(PaginationInnerInterceptor(DbType.MYSQL))
+            // 添加乐观锁插件
+            addInnerInterceptor(OptimisticLockerInnerInterceptor())
+            // 添加数据权限插件
+            addInnerInterceptor(DataPermissionInterceptor())
+        }
+    }
+    
+    /**
+     * 自动填充配置
+     */
+    @Bean
+    fun metaObjectHandler(): MetaObjectHandler {
+        return object : MetaObjectHandler {
+            override fun insertFill(metaObject: MetaObject) {
+                // 插入时自动填充创建时间和更新时间
+                this.strictInsertFill(metaObject, "createTime", LocalDateTime::class.java, LocalDateTime.now())
+                this.strictInsertFill(metaObject, "updateTime", LocalDateTime::class.java, LocalDateTime.now())
+            }
+            
+            override fun updateFill(metaObject: MetaObject) {
+                // 更新时自动填充更新时间
+                this.strictUpdateFill(metaObject, "updateTime", LocalDateTime::class.java, LocalDateTime.now())
+            }
+        }
+    }
+}
+```
+
+### 5. 代码行内注释规范
+
+```kotlin
+@Service
+class ChatServiceImpl {
+    
+    fun processMessage(message: String): String {
+        // 验证输入消息的合法性
+        if (message.isBlank()) {
+            return ErrorMessages.EMPTY_MESSAGE
+        }
+        
+        // 检查消息长度限制（最大2000字符）
+        if (message.length > MAX_MESSAGE_LENGTH) {
+            return ErrorMessages.MESSAGE_TOO_LONG
+        }
+        
+        // 调用AI服务处理消息，设置超时时间为30秒
+        val response = aiService.process(message, Duration.ofSeconds(30))
+        
+        // 使用 MyBatis-Plus 保存聊天记录
+        val chatRecord = ChatPO(
+            userId = UserContext.getCurrentUserId(),
+            userContent = message,
+            aiContent = response,
+            type = ChatType.SUMMARY
+        )
+        chatMapper.insert(chatRecord) // 使用内置 insert 方法
+        
+        return response
+    }
+}
+```
+
+## 前端 Vue.js + TypeScript 代码规范
+
+### 1. API 调用错误处理规范
+
+#### 1.1 统一错误处理原则
+- **禁止显式 try-catch**：所有接口调用错误已在 `AxiosUtil.ts` 中统一处理，前端代码不得显式使用 try-catch 捕获 API 错误
+- **集中处理**：所有 HTTP 请求的错误处理逻辑集中在 `AxiosUtil.ts` 的拦截器和响应处理中
+- **保持简洁**：业务代码只关注成功逻辑，不关心错误处理细节
+
+#### 1.2 正确的 API 调用方式
+
+```typescript
+// ✅ 正确：直接调用 API，不处理异常
+const getUserList = async () => {
+  // 直接调用，不使用 try-catch
+  const users = await UserApi.getUserList()
+  userList.value = users
+}
+
+// ✅ 正确：使用 then 处理成功结果
+const login = () => {
+  AuthApi.login(loginForm).then(data => {
+    // 处理登录成功逻辑
+    authStore.saveLoginData(data.token, data.refreshToken)
+    router.push('/dashboard')
+  })
+  // 不需要 catch，错误已在 AxiosUtil 中处理
+}
+```
+
+#### 1.3 错误处理说明
+
+`AxiosUtil.ts` 已提供以下错误处理机制：
+
+1. **401 权限错误**：自动尝试刷新 token，刷新失败则提示"请登录"并跳转到登录页
+2. **业务错误**：非 200 状态码的响应自动显示错误消息
+3. **网络错误**：显示网络相关错误提示
+4. **成功提示**：非 "NO_TIP" 的成功消息自动显示成功提示
+
+#### 1.4 特殊情况处理
+
+```typescript
+// ✅ 正确：需要静默处理的情况
+const silentApiCall = async () => {
+  // 在 API 中使用特殊消息标识 "NO_TIP" 避免自动提示
+  const result = await SomeApi.silentCall()
+  // 静默处理结果
+}
+
+// ✅ 正确：需要自定义成功提示的情况
+const customSuccessTip = async () => {
+  const result = await SomeApi.customCall()
+  // 根据结果自定义提示
+  if (result.status === 'special') {
+    ElMessage.success('特殊操作完成')
+  }
+  // 不会重复显示默认成功提示，因为可以在 API 中返回 "NO_TIP"
+}
+```
+
+### 2. 文件和组件注释规范
+
+#### 1.1 Vue 单文件组件注释
+```vue
+<!--
+  组件名称：ChatMessage
+  功能描述：显示聊天消息组件，支持用户消息和AI消息的不同样式
+  作者：[作者名]
+  创建时间：2025-01-10
+  依赖：Element Plus UI库
+-->
+<template>
+  <!-- 消息容器，根据发送者类型应用不同样式 -->
+  <div 
+    :class="['message-container', { 'user-message': isUser, 'ai-message': !isUser }]"
+  >
+    <!-- 用户头像或AI图标 -->
+    <div class="avatar">
+      <img v-if="isUser" :src="userAvatar" alt="用户头像" />
+      <el-icon v-else><Robot /></el-icon>
+    </div>
+    
+    <!-- 消息内容区域 -->
+    <div class="message-content">
+      <!-- 发送时间戳 -->
+      <div class="timestamp">{{ formatTime(timestamp) }}</div>
+      
+      <!-- 消息文本，支持Markdown渲染 -->
+      <div class="message-text" v-html="renderedContent"></div>
+    </div>
+  </div>
+</template>
+```
+
+#### 1.2 TypeScript 类型定义注释
+```typescript
+/**
+ * 用户登录请求DTO
+ * 
+ * 包含用户登录所需的所有字段，支持用户名登录和邮箱登录。
+ * 密码字段将进行加密传输。
+ */
+export interface LoginDTO {
+  /** 
+   * 登录标识符
+   * 可以是用户名或邮箱地址
+   */
+  identifier: string
+  
+  /** 
+   * 登录密码
+   * 前端需要加密处理后再发送
+   */
+  password: string
+  
+  /** 
+   * 记住登录状态
+   * true时延长token有效期至30天
+   */
+  rememberMe?: boolean
+}
+
+/**
+ * 聊天消息实体
+ * 
+ * 表示单条聊天消息的完整信息，包含发送者、内容、时间戳等。
+ * 用于前后端数据传输和本地存储。
+ */
+export interface ChatMessage {
+  /** 消息唯一标识符 */
+  id: string
+  
+  /** 消息发送者类型 */
+  sender: 'user' | 'assistant'
+  
+  /** 消息内容，支持Markdown格式 */
+  content: string
+  
+  /** 消息发送时间（Unix时间戳） */
+  timestamp: number
+  
+  /** 消息状态：发送中、已发送、发送失败 */
+  status: 'sending' | 'sent' | 'failed'
+  
+  /** 附加元数据，如文件信息、图片URL等 */
+  metadata?: MessageMetadata
+}
+```
+
+### 2. Vue Composition API 注释规范
+
+#### 2.1 Setup 函数注释
+```typescript
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/Stores/AuthStore'
+import { LoginDTO } from '@/Entity/DTO/Auth/LoginDTO'
+import { AxiosUtil } from '@/Util/AxiosUtil'
+
+// =========================> 组件属性定义 <=========================
+interface Props {
+  /** 是否显示记住密码选项 */
+  showRememberMe?: boolean
+  /** 登录成功后的重定向路径 */
+  redirectPath?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  showRememberMe: true,
+  redirectPath: '/dashboard'
+})
+
+// =========================> 响应式数据 <=========================
+/** 登录表单数据 */
+const loginForm = ref<LoginDTO>({
+  identifier: '',
+  password: '',
+  rememberMe: false
+})
+
+/** 表单加载状态 */
+const isLoading = ref(false)
+
+/** 表单验证错误信息 */
+const formErrors = ref<Record<string, string>>({})
+
+// =========================> 计算属性 <=========================
+/** 表单是否有效（所有必填字段都有值） */
+const isFormValid = computed(() => {
+  return loginForm.value.identifier.trim() !== '' && 
+         loginForm.value.password.trim() !== ''
+})
+
+/** 登录按钮是否禁用 */
+const isLoginDisabled = computed(() => {
+  return !isFormValid.value || isLoading.value
+})
+
+// =========================> 方法定义 <=========================
+/**
+ * 处理用户登录
+ * 
+ * 验证表单数据，调用登录API，处理登录结果。
+ * 成功时保存用户信息和token，失败时显示错误信息。
+ */
+const handleLogin = async (): Promise<void> => {
+  if (!isFormValid.value) {
+    ElMessage.warning('请填写完整的登录信息')
+    return
+  }
+  
+  isLoading.value = true
+  try {
+    // 调用登录API
+    const response = await authApi.login(loginForm.value)
+    
+    if (response.success) {
+      // 保存用户信息和token到store
+      authStore.setUser(response.data.user)
+      authStore.setToken(response.data.token)
+      
+      // 显示成功消息
+      ElMessage.success('登录成功')
+      
+      // 跳转到目标页面
+      await router.push(props.redirectPath)
+    } else {
+      ElMessage.error(response.message || '登录失败')
+    }
+  } catch (error) {
+    console.error('登录错误:', error)
+    ElMessage.error('网络错误，请稍后重试')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+/**
+ * 验证单个字段
+ * 
+ * @param field 字段名
+ * @param value 字段值
+ * @returns 验证错误信息，空字符串表示验证通过
+ */
+const validateField = (field: string, value: string): string => {
+  if (!value || value.trim() === '') {
+    return `${getFieldLabel(field)}不能为空`
+  }
+  
+  switch (field) {
+    case 'identifier':
+      if (value.length < 3) return '用户名或邮箱至少3个字符'
+      break
+    case 'password':
+      if (value.length < 6) return '密码至少6个字符'
+      break
+  }
+  
+  return ''
+}
+
+// =========================> 生命周期钩子 <=========================
+onMounted(() => {
+  // 组件挂载时初始化表单
+  initializeForm()
+})
+
+// =========================> 监听器 <=========================
+watch(
+  () => loginForm.value.identifier,
+  (newValue) => {
+    // 用户名改变时清除相关错误信息
+    if (formErrors.value.identifier) {
+      formErrors.value.identifier = ''
+    }
+  }
+)
+</script>
+```
+
+### 3. API 接口注释规范
+
+```typescript
+import { AxiosResponse } from 'axios'
+import { LoginDTO, LoginResult } from '@/Entity/DTO/Auth'
+import { AxiosUtil } from '@/Util/AxiosUtil'
+
+/**
+ * 认证相关API接口
+ * 
+ * 提供用户登录、注册、token刷新等认证相关功能。
+ * 所有请求都会自动添加认证头部信息。
+ */
+export class AuthApi {
+  /**
+   * 用户密码登录
+   * 
+   * 使用用户名/邮箱和密码进行身份验证，验证成功后
+   * 返回JWT访问令牌和用户信息。
+   * 
+   * @param loginData 登录请求数据
+   * @returns 登录结果，包含用户信息和令牌
+   * @throws 401 当认证失败时
+   * @throws 429 当请求过于频繁时
+   */
+  static async login(loginData: LoginDTO): Promise<AxiosResponse<LoginResult>> {
+    return await AxiosUtil.post('/auth/login', loginData)
+  }
+  
+  /**
+   * 刷新访问令牌
+   * 
+   * 使用刷新令牌获取新的访问令牌，用于延长用户会话。
+   * 刷新令牌过期后需要重新登录。
+   * 
+   * @param refreshToken 刷新令牌
+   * @returns 新的访问令牌信息
+   */
+  static async refreshToken(refreshToken: string): Promise<AxiosResponse<TokenResult>> {
+    return await AxiosUtil.post('/auth/refresh', { refreshToken })
+  }
+  
+  /**
+   * 用户退出登录
+   * 
+   * 使用户当前会话失效，清除服务端的token状态。
+   * 客户端也需要清除本地存储的用户信息。
+   * 
+   * @param accessToken 当前访问令牌
+   */
+  static async logout(accessToken: string): Promise<AxiosResponse<void>> {
+    return await AxiosUtil.post('/auth/logout', { accessToken })
+  }
+}
+```
+
+### 4. 工具类注释规范
+
+```typescript
+/**
+ * 时间格式化工具类
+ * 
+ * 提供各种时间格式化、计算、转换的工具方法。
+ * 支持多语言、时区处理等功能。
+ */
+export class TimeFormatUtil {
+  /** 默认日期时间格式 */
+  private static readonly DEFAULT_DATETIME_FORMAT = 'YYYY-MM-DD HH:mm:ss'
+  
+  /** 默认日期格式 */
+  private static readonly DEFAULT_DATE_FORMAT = 'YYYY-MM-DD'
+  
+  /**
+   * 格式化时间戳为可读字符串
+   * 
+   * 将Unix时间戳转换为指定格式的日期时间字符串。
+   * 支持相对时间显示（如"3分钟前"）。
+   * 
+   * @param timestamp Unix时间戳（毫秒）
+   * @param format 格式化模板，默认为 'YYYY-MM-DD HH:mm:ss'
+   * @param relative 是否使用相对时间，默认为 false
+   * @returns 格式化后的时间字符串
+   * 
+   * @example
+   * ```typescript
+   * TimeFormatUtil.format(1640995200000) // '2022-01-01 00:00:00'
+   * TimeFormatUtil.format(Date.now() - 180000, '', true) // '3分钟前'
+   * ```
+   */
+  static format(
+    timestamp: number, 
+    format: string = this.DEFAULT_DATETIME_FORMAT,
+    relative: boolean = false
+  ): string {
+    if (relative) {
+      return this.formatRelative(timestamp)
+    }
+    
+    return dayjs(timestamp).format(format)
+  }
+  
+  /**
+   * 计算相对时间显示
+   * 
+   * 计算给定时间戳相对于当前时间的时间差，
+   * 返回人类可读的相对时间字符串。
+   * 
+   * @param timestamp 目标时间戳
+   * @returns 相对时间字符串
+   */
+  private static formatRelative(timestamp: number): string {
+    const now = Date.now()
+    const diff = now - timestamp
+    
+    // 处理未来时间
+    if (diff < 0) {
+      const futureDiff = Math.abs(diff)
+      if (futureDiff < 60000) return '即将'
+      return dayjs(timestamp).fromNow()
+    }
+    
+    // 过去时间
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    const days = Math.floor(diff / 86400000)
+    
+    if (minutes < 1) return '刚刚'
+    if (minutes < 60) return `${minutes}分钟前`
+    if (hours < 24) return `${hours}小时前`
+    if (days < 30) return `${days}天前`
+    
+    return dayjs(timestamp).format(this.DEFAULT_DATE_FORMAT)
+  }
+}
+```
+
+## 通用注释规范
+
+### 1. TODO 注释规范
+```kotlin
+// TODO: 2025-01-10 - [作者名] - 添加邮件验证功能
+// 需要集成邮件服务，实现验证码发送和验证逻辑
+
+// TODO: 优化数据库查询性能
+// 当前查询存在N+1问题，需要添加join查询或缓存机制
+```
+
+### 2. FIXME 注释规范
+```typescript
+// FIXME: 处理并发修改问题
+// 当前实现可能存在竞态条件，需要添加乐观锁或分布式锁
+
+// FIXME: 修复内存泄漏问题
+// 事件监听器未正确清理，导致内存占用持续增长
+```
+
+### 3. NOTE 注释规范
+```typescript
+// NOTE: 这里使用第三方API，有调用频率限制
+// 需要实现请求限流和重试机制
+
+// NOTE: 数据库表结构变更需要考虑数据迁移
+// 字段类型变更时需要提供向后兼容性
+```
+
+### 4. WARNING 注释规范
+```kotlin
+// WARNING: 此方法会删除数据，请谨慎调用
+// 建议在调用前进行二次确认
+
+// WARNING: 这是一个性能敏感的方法
+// 在高频调用场景下需要特别关注执行效率
+```
+
+## 注释检查清单
+
+### 后端代码
+- [ ] 每个公共类都有完整的类注释
+- [ ] 每个公共方法都有JSDoc注释
+- [ ] 常量和重要字段都有注释说明
+- [ ] 复杂业务逻辑都有行内注释
+- [ ] 异常处理都有注释说明原因
+- [ ] API接口都有完整的参数和返回值说明
+- [ ] **强制使用 MyBatis-Plus 内置方法进行单表操作**
+- [ ] **严禁在单表操作中使用显式 SQL 语句**
+- [ ] **实体类正确使用了 @TableName、@TableId、@TableField 注解**
+- [ ] **Mapper 接口继承了 BaseMapper 并正确使用 QueryWrapper**
+- [ ] **多表联查时才使用 @Select 注解并添加详细注释说明**
+
+### 前端代码
+- [ ] 每个Vue组件都有功能描述注释
+- [ ] TypeScript接口和类型都有详细说明
+- [ ] 复杂的响应式逻辑都有注释
+- [ ] 事件处理函数都有功能说明
+- [ ] 第三方库的使用都有说明注释
+- [ ] **禁止使用显式 try-catch 处理 API 错误**
+- [ ] **所有接口调用直接使用，错误已在 AxiosUtil 中统一处理**
+- [ ] **需要特殊错误处理的场景使用 API 层提供的特殊标识（如 "NO_TIP"）**
+
+### 通用规范
+- [ ] 注释与代码保持同步更新
+- [ ] 注释语言统一使用中文
+- [ ] 避免注释显而易见的代码
+- [ ] 重要业务决策都有注释记录
+- [ ] 性能敏感代码都有特别说明
+
+## 工具和自动化
+
+### 1. IDE 配置
+- 配置IDE自动生成注释模板
+- 启用注释拼写检查
+- 配置代码格式化规则
+
+### 2. 代码审查检查点
+- 新增代码是否包含必要注释
+- 注释是否准确描述了代码功能
+- 是否存在过时或错误的注释
+- 复杂逻辑是否有充分说明
+
+### 3. 文档生成
+- 使用JSDoc/KDoc生成API文档
+- 确保注释格式符合文档生成要求
+- 定期更新和维护生成的文档
+
+## MyBatis-Plus 使用禁令和例外
+
+### 🚫 严格禁止的操作
+
+1. **单表操作中使用显式 SQL**
+   ```kotlin
+   // ❌ 错误：严禁在单表操作中使用 @Select
+   @Select("SELECT * FROM data_user WHERE username = #{username}")
+   fun selectByUsername(username: String): UserPO?
+   
+   // ❌ 错误：严禁在 Service 中编写 SQL 字符串
+   fun getUserByUsername(username: String): UserPO? {
+       val sql = "SELECT * FROM data_user WHERE username = '$username'"
+       return jdbcTemplate.queryForObject(sql, UserPO::class.java)
+   }
+   ```
+
+2. **重复实现 MyBatis-Plus 已有功能**
+   ```kotlin
+   // ❌ 错误：重复实现 insert 功能
+   fun customInsert(user: UserPO): Int {
+       val sql = "INSERT INTO data_user (username, password_hash) VALUES (?, ?)"
+       return jdbcTemplate.update(sql, user.username, user.passwordHash)
+   }
+   
+   // ✅ 正确：使用 MyBatis-Plus 内置方法
+   fun insertUser(user: UserPO): Int {
+       return userMapper.insert(user)
+   }
+   ```
+
+### ✅ 允许的例外情况
+
+1. **多表联查**
+   ```kotlin
+   // ✅ 正确：多表联查时可以使用 @Select
+   @Select("""
+       SELECT u.*, r.role_name 
+       FROM data_user u 
+       LEFT JOIN user_role ur ON u.id = ur.user_id 
+       LEFT JOIN role r ON ur.role_id = r.id 
+       WHERE u.id = #{userId}
+   """)
+   fun selectUserWithRoles(@Param("userId") userId: String): UserWithRolesVO?
+   ```
+
+2. **复杂聚合查询**
+   ```kotlin
+   // ✅ 正确：复杂的统计查询可以使用 @Select
+   @Select("""
+       SELECT 
+           DATE(create_time) as date,
+           COUNT(*) as user_count,
+           COUNT(CASE WHEN status = 0 THEN 1 END) as active_count
+       FROM data_user 
+       WHERE create_time >= #{startDate} 
+       GROUP BY DATE(create_time)
+   """)
+   fun selectUserStats(@Param("startDate") startDate: LocalDateTime): List<UserStatsVO>
+   ```
+
+3. **数据库特定功能**
+   ```kotlin
+   // ✅ 正确：使用数据库特定功能（如全文搜索）
+   @Select("""
+       SELECT * FROM data_user 
+       WHERE MATCH(username, email) AGAINST(#{keyword} IN NATURAL LANGUAGE MODE)
+   """)
+   fun searchUsers(@Param("keyword") keyword: String): List<UserPO>
+   ```
+
+## 最佳实践示例
+
+### 1. 正确的查询方式
+
+```kotlin
+// ✅ 使用 QueryWrapper 构建条件查询
+fun findActiveUsers(username: String?): List<UserPO> {
+    val queryWrapper = QueryWrapper<UserPO>()
+        .eq("status", UserPO.STATUS_NORMAL) // 状态过滤
+    
+    username?.let {
+        queryWrapper.like("username", it) // 动态添加模糊查询
+    }
+    
+    queryWrapper.orderByDesc("create_time") // 排序
+    
+    return userMapper.selectList(queryWrapper)
+}
+
+// ✅ 使用 LambdaUpdateWrapper 进行更新
+fun updateUserStatus(userIds: List<String>, status: Int): Boolean {
+    val updateWrapper = LambdaUpdateWrapper<UserPO>()
+        .`in`(UserPO::id, userIds)
+        .set(UserPO::status, status)
+        .set(UserPO::updateTime, LocalDateTime.now())
+    
+    return userMapper.update(null, updateWrapper) > 0
+}
+```
+
+### 2. 分页查询实现
+
+```kotlin
+// ✅ 使用 MyBatis-Plus 分页插件
+fun getUserPage(pageNum: Int, pageSize: Int, keyword: String?): Page<UserVO> {
+    val page = Page<UserPO>(pageNum, pageSize)
+    val queryWrapper = QueryWrapper<UserPO>()
+    
+    keyword?.let {
+        queryWrapper.and(wrapper -> 
+            wrapper.like("username", it)
+                .or()
+                .like("email", it)
+        )
+    }
+    
+    queryWrapper.orderByDesc("create_time")
+    
+    val userPage = userMapper.selectPage(page, queryWrapper)
+    
+    // 转换为 VO 返回
+    return userPage.convert { userPO ->
+        UserVO(
+            id = userPO.id!!,
+            username = userPO.username,
+            email = userPO.email,
+            status = userPO.status
+        )
+    }
+}
+```

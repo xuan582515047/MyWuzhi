@@ -1,0 +1,1370 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2025-12-10T15:51:02.774Z
+provider: 
+---
+
+# 前端 Pinia Store 使用规范
+
+## 适用范围
+适用于 wuzhi 项目的所有前端 Pinia Store 的编写和使用，包括状态管理、持久化、数据同步等方面的规范。
+
+## 总则
+
+### 1. Pinia 优先原则
+- **禁止直接使用 localStorage**：Store 中严禁直接使用 `localStorage.setItem` 和 `localStorage.removeItem`
+- **使用 Pinia 持久化插件**：所有数据持久化必须通过 Pinia 的 `persist` 选项实现
+- **统一状态管理**：应用的所有全局状态必须通过 Pinia Store 管理，避免分散的状态管理方案
+
+### 2. 状态设计原则
+- 状态扁平化：保持状态结构简单扁平，避免过度嵌套
+- 单一数据源：每个数据片段只在一个 Store 中管理
+- 最小状态：只存储必要的状态，派生数据使用 getters
+
+## Pinia Store 基础规范
+
+### 1. Store 定义规范
+
+```typescript
+/**
+ * 用户认证状态管理
+ * 
+ * 管理用户登录状态、令牌信息和相关操作。
+ * 使用 Pinia 持久化插件管理数据持久化，避免直接操作 localStorage。
+ */
+export const useAuthStore = defineStore('auth', () => {
+  // =========================> 状态定义 <=========================
+  /** 用户登录状态 */
+  const isLogin = ref(false)
+  
+  /** JWT 访问令牌 */
+  const accessToken = ref('')
+  
+  /** JWT 刷新令牌 */
+  const refreshToken = ref('')
+  
+  /** 记住登录状态标志 */
+  const rememberLogin = ref(false)
+
+  // =========================> 计算属性 <=========================
+  /** 是否已认证（包含登录状态和令牌存在性检查） */
+  const isAuthenticated = computed(() => isLogin.value && accessToken.value !== '')
+
+  // =========================> 操作方法 <=========================
+  /**
+   * 保存登录数据
+   * 
+   * @param token 访问令牌
+   * @param refresh 刷新令牌
+   * @param remember 是否记住登录状态
+   */
+  function saveLoginData(token: string, refresh: string, remember: boolean = false) {
+    accessToken.value = token
+    refreshToken.value = refresh
+    rememberLogin.value = remember
+    isLogin.value = true
+    // 注意：不再直接操作 localStorage，由 persist 插件自动处理
+  }
+
+  /**
+   * 清除登录状态
+   * 
+   * 重置所有认证相关状态，持久化插件会自动同步到存储
+   */
+  function clear() {
+    accessToken.value = ''
+    refreshToken.value = ''
+    isLogin.value = false
+    rememberLogin.value = false
+    // 注意：不再直接操作 localStorage
+  }
+
+  return { 
+    isLogin, 
+    accessToken, 
+    refreshToken, 
+    rememberLogin,
+    isAuthenticated,
+    saveLoginData, 
+    clear
+  }
+}, {
+  // =========================> 持久化配置 <=========================
+  persist: {
+    key: 'auth-store', // 唯一的存储键名
+    storage: localStorage, // 存储引擎
+    paths: ['rememberLogin'], // 只持久化指定的字段，敏感令牌不持久化
+    // 也可以使用序列化/反序列化函数控制存储格式
+    serializer: {
+      serialize: JSON.stringify,
+      deserialize: JSON.parse,
+    }
+  }
+})
+```
+
+### 2. Store 模块化规范
+
+```typescript
+/**
+ * 主题设置状态管理
+ * 
+ * 管理应用主题设置和用户界面偏好。
+ * 完全使用 Pinia 持久化管理主题状态。
+ */
+export const useThemeStore = defineStore('theme', () => {
+  // =========================> 状态定义 <=========================
+  /** 深色模式状态 */
+  const isDarkMode = ref(false)
+  
+  /** 主题颜色 */
+  const primaryColor = ref('#409EFF')
+  
+  /** 侧边栏折叠状态 */
+  const isSidebarCollapsed = ref(false)
+
+  // =========================> 操作方法 <=========================
+  /**
+   * 切换主题模式
+   */
+  function toggleTheme() {
+    isDarkMode.value = !isDarkMode.value
+    updateThemeClass()
+    // 注意：不再调用 localStorage.setItem
+  }
+
+  /**
+   * 设置主题模式
+   * 
+   * @param isDark 是否为深色模式
+   */
+  function setTheme(isDark: boolean) {
+    isDarkMode.value = isDark
+    updateThemeClass()
+    // 注意：不再调用 localStorage.setItem
+  }
+
+  /**
+   * 设置主题颜色
+   * 
+   * @param color 颜色值
+   */
+  function setPrimaryColor(color: string) {
+    primaryColor.value = color
+    updateThemeVariables()
+    // 注意：不再调用 localStorage.setItem
+  }
+
+  /**
+   * 初始化主题设置
+   * 
+   * 从持久化存储中恢复主题设置，如果无则使用系统默认设置
+   */
+  function initTheme() {
+    // 状态已经由 persist 插件自动恢复，这里只需要应用主题
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    
+    // 如果没有持久化的主题设置，使用系统偏好
+    if (isDarkMode.value === false && !systemPrefersDark) {
+      isDarkMode.value = systemPrefersDark
+    }
+    
+    updateThemeClass()
+    updateThemeVariables()
+  }
+
+  /**
+   * 更新文档主题类名
+   */
+  function updateThemeClass() {
+    if (isDarkMode.value) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }
+  
+  /**
+   * 更新主题 CSS 变量
+   */
+  function updateThemeVariables() {
+    document.documentElement.style.setProperty('--el-color-primary', primaryColor.value)
+  }
+
+  return {
+    // 状态
+    isDarkMode,
+    primaryColor,
+    isSidebarCollapsed,
+    // 操作
+    toggleTheme,
+    setTheme,
+    setPrimaryColor,
+    initTheme,
+    updateThemeClass,
+    updateThemeVariables
+  }
+}, {
+  // =========================> 持久化配置 <=========================
+  persist: {
+    key: 'theme-settings', // 唯一键名，避免与其他 Store 冲突
+    storage: localStorage,
+    // 持久化所有主题相关状态
+    paths: ['isDarkMode', 'primaryColor', 'isSidebarCollapsed']
+  }
+})
+```
+
+## 持久化规范
+
+### 1. 持久化配置原则
+
+```typescript
+/**
+ * 复杂状态持久化示例
+ * 
+ * 演示如何正确配置持久化选项，包括选择性持久化和序列化控制。
+ */
+export const useComplexStore = defineStore('complex', () => {
+  // =========================> 状态定义 <=========================
+  /** 需要持久化的用户设置 */
+  const userPreferences = ref({
+    language: 'zh-CN',
+    pageSize: 20,
+    autoSave: true
+  })
+  
+  /** 不需要持久化的临时数据 */
+  const tempData = ref({
+    loading: false,
+    error: null as string | null,
+    lastUpdate: null as Date | null
+  })
+  
+  /** 敏感信息，永不持久化 */
+  const sensitiveData = ref({
+    password: '',
+    authToken: ''
+  })
+
+  // =========================> 操作方法 <=========================
+  function updatePreferences(newPrefs: Partial<typeof userPreferences.value>) {
+    userPreferences.value = { ...userPreferences.value, ...newPrefs }
+    // persist 会自动处理持久化
+  }
+  
+  function setTempData(data: Partial<typeof tempData.value>) {
+    tempData.value = { ...tempData.value, ...data }
+    // 注意：这些数据不会持久化
+  }
+
+  return {
+    userPreferences,
+    tempData,
+    sensitiveData,
+    updatePreferences,
+    setTempData
+  }
+}, {
+  // =========================> 持久化配置 <=========================
+  persist: {
+    key: 'complex-store-settings',
+    storage: localStorage,
+    // 只持久化 userPreferences 中的字段，排除临时和敏感数据
+    paths: ['userPreferences'],
+    // 自定义序列化，处理特殊数据类型
+    serializer: {
+      serialize: (state) => {
+        return JSON.stringify({
+          userPreferences: state.userPreferences
+        })
+      },
+      deserialize: (str) => {
+        const data = JSON.parse(str)
+        return {
+          userPreferences: data.userPreferences || {
+            language: 'zh-CN',
+            pageSize: 20,
+            autoSave: true
+          }
+        }
+      }
+    }
+  }
+})
+```
+
+### 2. 多存储引擎支持
+
+```typescript
+/**
+ * 多存储引擎示例
+ * 
+ * 演示如何为不同类型的数据选择不同的存储引擎。
+ */
+export const useMultiStorageStore = defineStore('multi-storage', () => {
+  /** 用户会话数据，存储在 sessionStorage（会话级别） */
+  const sessionData = ref({
+    currentPage: 1,
+    searchFilters: {} as Record<string, any>
+  })
+  
+  /** 用户长期设置，存储在 localStorage（持久级别） */
+  const userSettings = ref({
+    theme: 'light',
+    language: 'zh-CN'
+  })
+  
+  /** 应用缓存，存储在 IndexedDB（大容量存储） */
+  const appCache = ref({
+    largeData: [] as any[],
+    lastSyncTime: null as Date | null
+  })
+
+  function updateSessionData(data: Partial<typeof sessionData.value>) {
+    sessionData.value = { ...sessionData.value, ...data }
+  }
+  
+  function updateUserSettings(settings: Partial<typeof userSettings.value>) {
+    userSettings.value = { ...userSettings.value, ...settings }
+  }
+  
+  function updateAppCache(cache: Partial<typeof appCache.value>) {
+    appCache.value = { ...appCache.value, ...cache }
+  }
+
+  return {
+    sessionData,
+    userSettings,
+    appCache,
+    updateSessionData,
+    updateUserSettings,
+    updateAppCache
+  }
+}, {
+  // =========================> 多存储配置 <=========================
+  persist: [
+    {
+      key: 'session-data',
+      storage: sessionStorage,
+      paths: ['sessionData']
+    },
+    {
+      key: 'user-settings',
+      storage: localStorage,
+      paths: ['userSettings']
+    },
+    {
+      key: 'app-cache',
+      storage: {
+        getItem: async (key) => {
+          // 使用 IndexedDB 或其他存储方式
+          return await getFromIndexedDB(key)
+        },
+        setItem: async (key, value) => {
+          // 使用 IndexedDB 或其他存储方式
+          return await setToIndexedDB(key, value)
+        }
+      },
+      paths: ['appCache']
+    }
+  ]
+})
+```
+
+## Store 间通信规范
+
+### 1. Store 依赖规范
+
+```typescript
+/**
+ * Store 间通信示例
+ * 
+ * 演示如何在 Store 之间正确通信，避免循环依赖。
+ */
+export const useUserStore = defineStore('user', () => {
+  /** 用户信息 */
+  const userInfo = ref({
+    id: '',
+    name: '',
+    avatar: ''
+  })
+  
+  /** 用户权限列表 */
+  const permissions = ref<string[]>([])
+
+  /**
+   * 更新用户信息
+   * 
+   * @param info 新的用户信息
+   */
+  function updateUserInfo(info: Partial<typeof userInfo.value>) {
+    userInfo.value = { ...userInfo.value, ...info }
+    
+    // 通知其他 Store 用户信息已更新
+    // 使用事件总线而不是直接调用其他 Store
+    eventBus.emit('user:updated', userInfo.value)
+  }
+  
+  /**
+   * 更新用户权限
+   * 
+   * @param perms 新的权限列表
+   */
+  function updatePermissions(perms: string[]) {
+    permissions.value = perms
+    eventBus.emit('user:permissions-updated', perms)
+  }
+
+  return {
+    userInfo,
+    permissions,
+    updateUserInfo,
+    updatePermissions
+  }
+}, {
+  persist: {
+    key: 'user-info',
+    storage: localStorage,
+    paths: ['userInfo'] // 权限信息不持久化，每次重新获取
+  }
+})
+
+/**
+ * 依赖用户信息的 Store
+ * 
+ * 通过事件监听而不是直接引用来响应其他 Store 的变化
+ */
+export const useAuthStore = defineStore('auth', () => {
+  /** 认证状态 */
+  const isAuthenticated = ref(false)
+  
+  /** 用户角色 */
+  const userRole = ref('')
+  
+  /**
+   * 初始化认证状态
+   */
+  function initAuth() {
+    // 监听用户信息更新事件
+    eventBus.on('user:updated', (userInfo) => {
+      if (userInfo.id) {
+        isAuthenticated.value = true
+      } else {
+        isAuthenticated.value = false
+      }
+    })
+    
+    // 监听权限更新事件
+    eventBus.on('user:permissions-updated', (permissions) => {
+      if (permissions.includes('admin')) {
+        userRole.value = 'admin'
+      } else if (permissions.includes('editor')) {
+        userRole.value = 'editor'
+      } else {
+        userRole.value = 'user'
+      }
+    })
+  }
+  
+  // 在 Store 创建时初始化
+  initAuth()
+
+  return {
+    isAuthenticated,
+    userRole
+  }
+})
+```
+
+## 最佳实践
+
+### 1. Store 结构最佳实践
+
+```typescript
+/**
+ * 购物车状态管理 - 最佳实践示例
+ * 
+ * 展示如何构建一个结构良好、符合最佳实践的 Pinia Store。
+ */
+export const useCartStore = defineStore('cart', () => {
+  // =========================> 状态定义 <=========================
+  /** 购物车商品列表 */
+  const items = ref<CartItem[]>([])
+  
+  /** 优惠券列表 */
+  const coupons = ref<Coupon[]>([])
+  
+  /** 配送信息 */
+  const deliveryInfo = ref<DeliveryInfo>({
+    address: '',
+    method: 'standard',
+    estimatedTime: null
+  })
+  
+  // =========================> 计算属性 <=========================
+  /** 购物车商品总数 */
+  const totalItems = computed(() => {
+    return items.value.reduce((total, item) => total + item.quantity, 0)
+  })
+  
+  /** 购物车商品总价（不含折扣） */
+  const subtotal = computed(() => {
+    return items.value.reduce((total, item) => total + (item.price * item.quantity), 0)
+  })
+  
+  /** 优惠总额 */
+  const discountAmount = computed(() => {
+    return coupons.value.reduce((total, coupon) => {
+      if (isCouponApplicable(coupon)) {
+        return total + calculateCouponDiscount(coupon, subtotal.value)
+      }
+      return total
+    }, 0)
+  })
+  
+  /** 运费 */
+  const deliveryFee = computed(() => {
+    if (subtotal.value >= FREE_DELIVERY_THRESHOLD) {
+      return 0
+    }
+    return deliveryInfo.value.method === 'express' ? EXPRESS_DELIVERY_FEE : STANDARD_DELIVERY_FEE
+  })
+  
+  /** 最终总价 */
+  const total = computed(() => {
+    return subtotal.value - discountAmount.value + deliveryFee.value
+  })
+  
+  /** 购物车是否为空 */
+  const isEmpty = computed(() => items.value.length === 0)
+  
+  // =========================> 操作方法 <=========================
+  /**
+   * 添加商品到购物车
+   * 
+   * @param product 商品信息
+   * @param quantity 数量，默认为1
+   */
+  function addItem(product: Product, quantity: number = 1) {
+    const existingItem = items.value.find(item => item.productId === product.id)
+    
+    if (existingItem) {
+      // 商品已存在，增加数量
+      existingItem.quantity += quantity
+    } else {
+      // 商品不存在，添加新项
+      items.value.push({
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        quantity,
+        addedAt: new Date()
+      })
+    }
+    
+    // 保存购物车状态（persist 会自动处理）
+    saveCartToServer()
+  }
+  
+  /**
+   * 从购物车移除商品
+   * 
+   * @param productId 商品ID
+   */
+  function removeItem(productId: string) {
+    const index = items.value.findIndex(item => item.productId === productId)
+    if (index !== -1) {
+      items.value.splice(index, 1)
+      saveCartToServer()
+    }
+  }
+  
+  /**
+   * 更新商品数量
+   * 
+   * @param productId 商品ID
+   * @param quantity 新数量
+   */
+  function updateItemQuantity(productId: string, quantity: number) {
+    if (quantity <= 0) {
+      removeItem(productId)
+      return
+    }
+    
+    const item = items.value.find(item => item.productId === productId)
+    if (item) {
+      item.quantity = quantity
+      saveCartToServer()
+    }
+  }
+  
+  /**
+   * 清空购物车
+   */
+  function clearCart() {
+    items.value = []
+    coupons.value = []
+    saveCartToServer()
+  }
+  
+  /**
+   * 应用优惠券
+   * 
+   * @param coupon 优惠券信息
+   */
+  function applyCoupon(coupon: Coupon) {
+    if (isCouponApplicable(coupon)) {
+      coupons.value.push(coupon)
+      saveCartToServer()
+    } else {
+      throw new Error('优惠券不适用')
+    }
+  }
+  
+  /**
+   * 移除优惠券
+   * 
+   * @param couponId 优惠券ID
+   */
+  function removeCoupon(couponId: string) {
+    const index = coupons.value.findIndex(coupon => coupon.id === couponId)
+    if (index !== -1) {
+      coupons.value.splice(index, 1)
+      saveCartToServer()
+    }
+  }
+  
+  /**
+   * 更新配送信息
+   * 
+   * @param info 配送信息
+   */
+  function updateDeliveryInfo(info: Partial<DeliveryInfo>) {
+    deliveryInfo.value = { ...deliveryInfo.value, ...info }
+    saveCartToServer()
+  }
+  
+  // =========================> 辅助方法 <=========================
+  /**
+   * 检查优惠券是否适用
+   * 
+   * @param coupon 优惠券
+   * @returns 是否适用
+   */
+  function isCouponApplicable(coupon: Coupon): boolean {
+    // 检查优惠券是否过期
+    if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+      return false
+    }
+    
+    // 检查最低消费要求
+    if (coupon.minimumAmount && subtotal.value < coupon.minimumAmount) {
+      return false
+    }
+    
+    // 检查使用次数限制
+    if (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) {
+      return false
+    }
+    
+    // 检查适用商品
+    if (coupon.applicableProducts && coupon.applicableProducts.length > 0) {
+      return items.value.some(item => coupon.applicableProducts!.includes(item.productId))
+    }
+    
+    return true
+  }
+  
+  /**
+   * 计算优惠券折扣金额
+   * 
+   * @param coupon 优惠券
+   * @param cartTotal 购物车总价
+   * @returns 折扣金额
+   */
+  function calculateCouponDiscount(coupon: Coupon, cartTotal: number): number {
+    if (coupon.type === 'percentage') {
+      return Math.min(cartTotal * (coupon.value / 100), coupon.maximumDiscount || Infinity)
+    } else {
+      return Math.min(coupon.value, cartTotal)
+    }
+  }
+  
+  /**
+   * 将购物车保存到服务器
+   * 
+   * 异步保存购物车状态到服务器，确保跨设备同步
+   */
+  async function saveCartToServer() {
+    try {
+      await CartApi.saveCart({
+        items: items.value,
+        coupons: coupons.value,
+        deliveryInfo: deliveryInfo.value
+      })
+    } catch (error) {
+      console.error('保存购物车失败:', error)
+      // 可以考虑添加错误状态
+    }
+  }
+  
+  /**
+   * 从服务器加载购物车
+   * 
+   * 初始化时从服务器恢复购物车状态
+   */
+  async function loadCartFromServer() {
+    try {
+      const cartData = await CartApi.getCart()
+      if (cartData) {
+        items.value = cartData.items || []
+        coupons.value = cartData.coupons || []
+        deliveryInfo.value = cartData.deliveryInfo || deliveryInfo.value
+      }
+    } catch (error) {
+      console.error('加载购物车失败:', error)
+      // 如果服务器加载失败，使用本地持久化的数据
+    }
+  }
+
+  return {
+    // 状态
+    items,
+    coupons,
+    deliveryInfo,
+    // 计算属性
+    totalItems,
+    subtotal,
+    discountAmount,
+    deliveryFee,
+    total,
+    isEmpty,
+    // 操作
+    addItem,
+    removeItem,
+    updateItemQuantity,
+    clearCart,
+    applyCoupon,
+    removeCoupon,
+    updateDeliveryInfo,
+    loadCartFromServer
+  }
+}, {
+  // =========================> 持久化配置 <=========================
+  persist: {
+    key: 'shopping-cart',
+    storage: localStorage,
+    // 持久化所有状态，但某些敏感信息（如支付信息）应该排除
+    paths: ['items', 'coupons', 'deliveryInfo'],
+    // 自定义序列化处理特殊数据类型（如Date）
+    serializer: {
+      serialize: (state) => {
+        return JSON.stringify({
+          items: state.items.map(item => ({
+            ...item,
+            addedAt: item.addedAt.toISOString()
+          })),
+          coupons: state.coupons,
+          deliveryInfo: state.deliveryInfo
+        })
+      },
+      deserialize: (str) => {
+        const data = JSON.parse(str)
+        return {
+          items: (data.items || []).map((item: any) => ({
+            ...item,
+            addedAt: new Date(item.addedAt)
+          })),
+          coupons: data.coupons || [],
+          deliveryInfo: data.deliveryInfo || {}
+        }
+      }
+    }
+  }
+})
+```
+
+## 迁移指南
+
+### 1. 从 localStorage 到 Pinia persist 迁移步骤
+
+```typescript
+/**
+ * 迁移示例：将使用 localStorage 的 Store 转换为 Pinia persist
+ */
+
+// ===== 旧代码（使用 localStorage）=====
+const oldAuthStore = {
+  state: () => ({
+    token: '',
+    user: null
+  }),
+  
+  actions: {
+    login(token, user) {
+      this.token = token
+      this.user = user
+      
+      // ❌ 禁止：直接使用 localStorage
+      localStorage.setItem('auth-token', token)
+      localStorage.setItem('user-info', JSON.stringify(user))
+    },
+    
+    logout() {
+      this.token = ''
+      this.user = null
+      
+      // ❌ 禁止：直接使用 localStorage
+      localStorage.removeItem('auth-token')
+      localStorage.removeItem('user-info')
+    },
+    
+    init() {
+      // ❌ 禁止：直接从 localStorage 读取
+      const token = localStorage.getItem('auth-token')
+      const userInfo = localStorage.getItem('user-info')
+      
+      if (token) {
+        this.token = token
+        this.user = JSON.parse(userInfo || 'null')
+      }
+    }
+  }
+}
+
+// ===== 新代码（使用 Pinia persist）=====
+export const useAuthStore = defineStore('auth', () => {
+  const token = ref('')
+  const user = ref(null)
+  
+  // 简单的登录操作，不涉及 localStorage
+  function login(authToken: string, userInfo: any) {
+    token.value = authToken
+    user.value = userInfo
+    // persist 插件会自动处理持久化
+  }
+  
+  function logout() {
+    token.value = ''
+    user.value = null
+    // persist 插件会自动清除持久化数据
+  }
+  
+  // 初始化可以移除，因为 persist 插件会自动恢复数据
+  // 或者添加特殊的初始化逻辑（如从旧 key 迁移数据）
+  function migrateFromOldStorage() {
+    const oldToken = localStorage.getItem('auth-token')
+    if (oldToken && !token.value) {
+      // 从旧存储迁移到新状态
+      token.value = oldToken
+      localStorage.removeItem('auth-token') // 清除旧数据
+    }
+  }
+
+  return {
+    token,
+    user,
+    login,
+    logout,
+    migrateFromOldStorage
+  }
+}, {
+  persist: {
+    key: 'auth-store', // 新的存储键名
+    storage: localStorage,
+    paths: ['token', 'user'] // 指定要持久化的字段
+  }
+})
+```
+
+### 2. 复杂数据类型处理
+
+```typescript
+/**
+ * 复杂数据类型的持久化处理
+ * 
+ * 演示如何处理 Date、Map、Set 等特殊数据类型
+ */
+export const useComplexDataStore = defineStore('complex-data', () => {
+  /** 包含 Date 对象的数据 */
+  const timeline = ref<TimelineEvent[]>([])
+  
+  /** Map 数据结构 */
+  const dataMap = ref(new Map<string, any>())
+  
+  /** Set 数据结构 */
+  const tags = ref(new Set<string>())
+  
+  /** File 对象 */
+  const attachments = ref<File[]>([])
+  
+  /**
+   * 添加时间线事件
+   */
+  function addTimelineEvent(event: Omit<TimelineEvent, 'id'>) {
+    timeline.value.push({
+      ...event,
+      id: generateId(),
+      timestamp: new Date() // Date 对象
+    })
+  }
+  
+  /**
+   * 更新 Map 数据
+   */
+  function updateMapData(key: string, value: any) {
+    dataMap.value.set(key, value)
+  }
+  
+  /**
+   * 添加标签
+   */
+  function addTag(tag: string) {
+    tags.value.add(tag)
+  }
+  
+  /**
+   * 添加附件
+   */
+  function addAttachment(file: File) {
+    attachments.value.push(file)
+  }
+
+  return {
+    timeline,
+    dataMap,
+    tags,
+    attachments,
+    addTimelineEvent,
+    updateMapData,
+    addTag,
+    addAttachment
+  }
+}, {
+  persist: {
+    key: 'complex-data-store',
+    storage: localStorage,
+    // 使用自定义序列化器处理复杂数据类型
+    serializer: {
+      serialize: (state) => {
+        return JSON.stringify({
+          timeline: state.timeline.map(event => ({
+            ...event,
+            timestamp: event.timestamp.toISOString() // 将 Date 转换为字符串
+          })),
+          dataMap: Array.from(state.dataMap.entries()), // 将 Map 转换为数组
+          tags: Array.from(state.tags), // 将 Set 转换为数组
+          // File 对象不能直接序列化，需要特殊处理
+          attachments: state.attachments.map(file => ({
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            lastModified: file.lastModified
+            // 注意：实际 File 内容无法序列化，可能需要其他存储方案
+          }))
+        })
+      },
+      deserialize: (str) => {
+        const data = JSON.parse(str)
+        return {
+          timeline: (data.timeline || []).map((event: any) => ({
+            ...event,
+            timestamp: new Date(event.timestamp) // 将字符串还原为 Date
+          })),
+          dataMap: new Map(data.dataMap || []), // 将数组还原为 Map
+          tags: new Set(data.tags || []), // 将数组还原为 Set
+          attachments: [] // File 对象无法还原，需要重新加载或其他处理
+        }
+      }
+    }
+  }
+})
+```
+
+## 常见问题和解决方案
+
+### 1. 数据同步问题
+
+```typescript
+/**
+ * 数据同步解决方案
+ * 
+ * 处理多个标签页之间的状态同步问题
+ */
+export const useSyncStore = defineStore('sync', () => {
+  const sharedData = ref({
+    counter: 0,
+    lastUpdate: new Date()
+  })
+  
+  /**
+   * 更新共享数据
+   */
+  function updateSharedData(delta: number) {
+    sharedData.value.counter += delta
+    sharedData.value.lastUpdate = new Date()
+    
+    // 广播更新事件到其他标签页
+    window.dispatchEvent(new CustomEvent('store-update', {
+      detail: {
+        store: 'sync',
+        data: sharedData.value
+      }
+    }))
+  }
+  
+  /**
+   * 监听其他标签页的更新
+   */
+  function setupCrossTabSync() {
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'sync-store') {
+        // 只在不是当前标签页触发的事件时更新
+        const newData = JSON.parse(event.newValue || '{}')
+        if (newData.sharedData && newData.sharedData.counter !== sharedData.value.counter) {
+          sharedData.value = newData.sharedData
+        }
+      }
+    })
+    
+    // 也可以使用自定义事件进行同步
+    window.addEventListener('store-update', (event) => {
+      if (event.detail.store === 'sync') {
+        sharedData.value = event.detail.data
+      }
+    })
+  }
+
+  return {
+    sharedData,
+    updateSharedData,
+    setupCrossTabSync
+  }
+}, {
+  persist: {
+    key: 'sync-store',
+    storage: localStorage
+  }
+})
+
+// 在应用初始化时设置跨标签页同步
+export function setupStores() {
+  const syncStore = useSyncStore()
+  syncStore.setupCrossTabSync()
+}
+```
+
+### 2. 性能优化
+
+```typescript
+/**
+ * Store 性能优化示例
+ * 
+ * 演示如何优化大型 Store 的性能
+ */
+export const useOptimizedStore = defineStore('optimized', () => {
+  // =========================> 状态定义 <=========================
+  /** 大型数据集 */
+  const largeDataset = ref<LargeItem[]>([])
+  
+  /** 筛选条件 */
+  const filters = ref({
+    keyword: '',
+    category: '',
+    sortBy: 'name',
+    sortOrder: 'asc' as 'asc' | 'desc'
+  })
+  
+  /** UI 状态 */
+  const uiState = ref({
+    isLoading: false,
+    selectedItems: new Set<string>(),
+    expandedItems: new Set<string>()
+  })
+  
+  // =========================> 优化的计算属性 <=========================
+  /** 筛选后的数据 - 使用缓存避免重复计算 */
+  const filteredData = computed(() => {
+    // 先进行简单的筛选
+    let result = largeDataset.value
+    
+    if (filters.value.keyword) {
+      const keyword = filters.value.keyword.toLowerCase()
+      result = result.filter(item => 
+        item.name.toLowerCase().includes(keyword) || 
+        item.description.toLowerCase().includes(keyword)
+      )
+    }
+    
+    if (filters.value.category) {
+      result = result.filter(item => item.category === filters.value.category)
+    }
+    
+    // 再进行排序
+    const sortKey = filters.value.sortBy
+    const sortOrder = filters.value.sortOrder
+    
+    return [...result].sort((a, b) => {
+      const aValue = a[sortKey as keyof LargeItem]
+      const bValue = b[sortKey as keyof LargeItem]
+      
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+  })
+  
+  /** 分页数据 - 使用分页减少渲染负担 */
+  const paginatedData = computed(() => {
+    // 可以在这里实现分页逻辑
+    // 或者结合分页组件使用
+    return filteredData.value
+  })
+  
+  // =========================> 优化的操作方法 <=========================
+  /**
+   * 批量更新数据
+   * 
+   * 使用批量更新减少响应式更新次数
+   */
+  function batchUpdateItems(updates: Array<{ id: string, changes: Partial<LargeItem> }>) {
+    // 暂停响应式跟踪
+    const originalItems = [...largeDataset.value]
+    
+    try {
+      // 批量更新
+      for (const { id, changes } of updates) {
+        const index = largeDataset.value.findIndex(item => item.id === id)
+        if (index !== -1) {
+          // 使用 Object.assign 减少响应式开销
+          Object.assign(largeDataset.value[index], changes)
+        }
+      }
+    } catch (error) {
+      // 出错时恢复原始数据
+      largeDataset.value = originalItems
+      throw error
+    }
+  }
+  
+  /**
+   * 虚拟滚动加载
+   * 
+   * 只加载可见区域的数据，提高大数据集性能
+   */
+  async function loadVisibleData(startIndex: number, count: number) {
+    uiState.value.isLoading = true
+    
+    try {
+      // 从服务器加载指定范围的数据
+      const data = await Api.loadDataRange(startIndex, count)
+      
+      // 批量更新数据
+      const updates = data.map((item, index) => ({
+        id: item.id,
+        changes: item
+      }))
+      
+      batchUpdateItems(updates)
+    } finally {
+      uiState.value.isLoading = false
+    }
+  }
+  
+  /**
+   * 优化选择操作
+   * 
+   * 使用 Set 优化多选操作性能
+   */
+  function toggleItemSelection(itemId: string) {
+    if (uiState.value.selectedItems.has(itemId)) {
+      uiState.value.selectedItems.delete(itemId)
+    } else {
+      uiState.value.selectedItems.add(itemId)
+    }
+  }
+  
+  /**
+   * 批量选择操作
+   */
+  function selectAllItems() {
+    uiState.value.selectedItems = new Set(
+      filteredData.value.map(item => item.id)
+    )
+  }
+  
+  /**
+   * 清除选择
+   */
+  function clearSelection() {
+    uiState.value.selectedItems.clear()
+  }
+  
+  /**
+   * 展开/折叠项目
+   * 
+   * 优化展开/折叠状态管理
+   */
+  function toggleItemExpansion(itemId: string) {
+    if (uiState.value.expandedItems.has(itemId)) {
+      uiState.value.expandedItems.delete(itemId)
+    } else {
+      uiState.value.expandedItems.add(itemId)
+    }
+  }
+
+  return {
+    // 状态
+    largeDataset,
+    filters,
+    uiState,
+    // 计算属性
+    filteredData,
+    paginatedData,
+    // 操作
+    batchUpdateItems,
+    loadVisibleData,
+    toggleItemSelection,
+    selectAllItems,
+    clearSelection,
+    toggleItemExpansion
+  }
+}, {
+  persist: {
+    key: 'optimized-store',
+    storage: localStorage,
+    // 只持久化必要的状态，大型数据集和临时UI状态不持久化
+    paths: ['filters'],
+    // 使用自定义序列化处理 Set
+    serializer: {
+      serialize: (state) => {
+        return JSON.stringify({
+          filters: state.filters
+        })
+      },
+      deserialize: (str) => {
+        const data = JSON.parse(str)
+        return {
+          filters: data.filters || {
+            keyword: '',
+            category: '',
+            sortBy: 'name',
+            sortOrder: 'asc'
+          }
+        }
+      }
+    }
+  }
+})
+```
+
+## 违规代码示例和修复方案
+
+### 1. 常见违规代码示例
+
+```typescript
+// ❌ 错误：在 Store 中直接使用 localStorage.setItem
+export const useBadStore = defineStore('bad-example', () => {
+  const userSettings = ref({
+    theme: 'light',
+    language: 'zh-CN'
+  })
+  
+  function updateSettings(settings: Partial<typeof userSettings.value>) {
+    userSettings.value = { ...userSettings.value, ...settings }
+    
+    // ❌ 禁止：直接使用 localStorage
+    localStorage.setItem('user-settings', JSON.stringify(userSettings.value))
+  }
+  
+  function loadSettings() {
+    // ❌ 禁止：直接从 localStorage 读取
+    const saved = localStorage.getItem('user-settings')
+    if (saved) {
+      userSettings.value = JSON.parse(saved)
+    }
+  }
+  
+  function clearSettings() {
+    userSettings.value = { theme: 'light', language: 'zh-CN' }
+    
+    // ❌ 禁止：直接操作 localStorage
+    localStorage.removeItem('user-settings')
+  }
+  
+  return {
+    userSettings,
+    updateSettings,
+    loadSettings,
+    clearSettings
+  }
+})
+```
+
+### 2. 正确的修复方案
+
+```typescript
+// ✅ 正确：使用 Pinia persist 插件管理持久化
+export const useGoodStore = defineStore('good-example', () => {
+  const userSettings = ref({
+    theme: 'light',
+    language: 'zh-CN'
+  })
+  
+  function updateSettings(settings: Partial<typeof userSettings.value>) {
+    userSettings.value = { ...userSettings.value, ...settings }
+    // persist 插件会自动处理持久化，无需手动操作 localStorage
+  }
+  
+  function loadSettings() {
+    // persist 插件会在 Store 初始化时自动恢复数据
+    // 这里可以添加额外的初始化逻辑
+  }
+  
+  function clearSettings() {
+    userSettings.value = { theme: 'light', language: 'zh-CN' }
+    // persist 插件会自动处理数据清除
+  }
+  
+  return {
+    userSettings,
+    updateSettings,
+    loadSettings,
+    clearSettings
+  }
+}, {
+  // ✅ 正确：使用 persist 选项配置持久化
+  persist: {
+    key: 'user-settings-store',
+    storage: localStorage,
+    paths: ['userSettings']
+  }
+})
+```
+
+## 规则检查清单
+
+- [ ] **Store 中不包含任何直接的 localStorage.setItem/removeItem 调用**
+- [ ] **所有持久化需求通过 Pinia persist 插件实现**
+- [ ] **每个 Store 都有明确的 persist 配置**
+- [ ] **敏感数据（如令牌、密码）不进行持久化**
+- [ ] **复杂数据类型使用自定义序列化器处理**
+- [ ] **Store 结构清晰，状态、计算属性、操作方法分离明确**
+- [ ] **Store 间通信使用事件总线而不是直接引用**
+- [ ] **大型数据集使用性能优化技术（如分页、虚拟滚动）**
+- [ ] **代码注释完整，特别是复杂逻辑和持久化配置**
+
+## 总结
+
+本规范旨在确保项目中的 Pinia Store 使用一致性和最佳实践，特别是：
+
+1. **禁止直接使用 localStorage**：所有数据持久化必须通过 Pinia persist 插件实现
+2. **统一状态管理**：应用状态集中在 Pinia Store 中管理
+3. **性能优化**：合理使用计算属性、分页、批量更新等技术
+4. **代码可维护性**：清晰的 Store 结构、完整的注释和文档
+
+遵循这些规范将提高代码质量、可维护性和应用性能。

@@ -1,0 +1,15 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2025-12-18T10:51:58.182Z
+provider: 
+---
+
+如果我用的语言是Kotlin，那么mybatis的规则：
+-- 使用 Mybatis-plus 规范，除非多表联查，否则请不要用 Mybatis 手动编写显式SQL
+	-- 构建查询条件请使用 KtQueryWrapper，形式为 KtQueryWrapper(xxx::class.java)，一定要有【.java】后缀
+	-- 构建更新条件请使用 KtUpdateWrapper，形式为 KtUpdateWrapper(xxx::class.java)，一定要有【.java】后缀
+	-- KtQueryWrapper 的引用路径是：com.baomidou.mybatisplus.extension.kotlin.KtQueryWrapper
+	-- KtUpdateWrapper 的引用路径是：com.baomidou.mybatisplus.extension.kotlin.KtUpdateWrapper
+	-- 实现和建表语句中，都不允许出现物理外键，全部用逻辑外键实现
