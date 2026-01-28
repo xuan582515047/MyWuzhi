@@ -1,0 +1,775 @@
+/* 全局样式文件 - 支持亮暗模式 */
+
+/* 亮色模式变量 - 紫色-白（偏蓝）渐变色调 */
+:root {
+  --bg-primary: #f8f7ff; /* 极浅的紫白色 */
+  --bg-secondary: #f0f2ff; /* 浅紫蓝色 */
+  --bg-tertiary: #e8ecff; /* 稍深的紫蓝色 */
+  --text-primary: #2a1a4a; /* 提高明度并带上微弱紫色色相 */
+  --text-secondary: #3d2a6b; /* 提高明度并带上微弱紫色色相 */
+  --text-tertiary: #5a4a8a; /* 提高明度并带上微弱紫色色相 */
+  --text-on-primary: #f0f4ff; /* 带上微弱蓝色色相的白色 */
+  --border-primary: #c1b5d8; /* 降低明度的紫蓝边框，更柔和 */
+  --border-secondary: #b8ace5; /* 降低明度的中等紫蓝边框 */
+  --border-tertiary: #a998d0; /* 降低明度的浅紫蓝边框 */
+  --border-light: #e2d8f0;
+  --accent-primary: #7c3aed; /* 紫色主色调 */
+  --accent-secondary: #6d28d9; /* 深紫色 */
+  --accent-warning: #e6a23c;
+  --accent-danger: #f56c6c;
+  --info-color: #409eff;
+  --warning-color: #e6a23c;
+  --bg-warning: #3b3220;
+  --primary-color: #7c3aed; /* 紫色主色调 */
+  --primary-color-light: rgba(124, 58, 237, 0.2);
+  --danger-color: #f56c6c;
+  --danger-bg: #fef2f2;
+  --danger-border: #fecaca;
+  --gradient-primary: linear-gradient(135deg, #7c3aed, #a78bfa); /* 紫色到浅紫渐变 */
+  --gradient-danger: linear-gradient(135deg, #f56c6c, #e53e3e);
+  --gradient-bg: linear-gradient(135deg, #f8f7ff, #e8ecff); /* 紫白渐变背景 */
+  --gradient-overlay: linear-gradient(135deg, rgba(124, 58, 237, 0.05), rgba(167, 139, 250, 0.05));
+  --primary-gradient: linear-gradient(135deg, #7c3aed, #a78bfa); /* 紫色到浅紫渐变 */
+  --shadow-light: 0 2px 8px rgba(124, 58, 237, 0.25);
+  --shadow-medium: 0 4px 16px rgba(124, 58, 237, 0.35);
+  --shadow-heavy: 0 8px 32px rgba(124, 58, 237, 0.4);
+  --card-glow: 0 0 10px rgba(124, 58, 237, 0.15);
+  --card-edge-glow: 0 0 20px rgba(124, 58, 237, 0.25);
+  --card-bg: #f8f7ff; /* 极浅的紫白色 */
+  --card-hover: #f0f2ff; /* 浅紫蓝色 */
+  --sidebar-bg: #f8f7ff; /* 极浅的紫白色 */
+  --chat-bg: #f8f7ff; /* 极浅的紫白色 */
+  --input-bg: #f8f7ff; /* 极浅的紫白色 */
+  --icon-bg: #f0f2ff; /* 浅紫蓝色 */
+  --icon-active-bg: #7c3aed; /* 紫色 */
+  --hover-bg: #f4f3ff; /* 极轻微的hover效果 */
+  --gradient-start: #f8f7ff; /* 极浅的紫白色 */
+  --gradient-mid: #f0f2ff; /* 浅紫蓝色 */
+  --gradient-end: #e8ecff; /* 稍深的紫蓝色 */
+  --gradient-dark-start: #2d1b69; /* 深紫色 */
+  --primary-blue: #8b9dc3; /* 蓝色-白色（偏紫）的渐变 */
+  --primary-purple: #a78bfa; /* 紫色-白色（偏蓝）的渐变 */
+  --primary-accent-mid: #b39ddb; /* 中性紫色调 */
+  --primary-gradient-start: #e8ecff; /* 紫色-白色（偏蓝）的起始色 */
+  --primary-gradient-mid: #f0f2ff; /* 低饱和度中间色 */
+  --primary-gradient-end: #f8f7ff; /* 极淡的结束色 */
+  --primary-blue-light: #b8c5f6; /* 蓝色-白色（偏紫）的渐变 */
+  --primary-accent-end: #f0f2ff; /* 浅紫色结束色 */
+  --border-color: #e2d8f0;
+  --shadow-color: 0 2px 12px rgba(124, 58, 237, 0.3);
+  --hover-shadow-color: 0 6px 20px rgba(124, 58, 237, 0.4);
+  --scrollbar-track: #f0f2ff;
+  --scrollbar-thumb: #c1b5d8;
+  --scrollbar-thumb-hover: #b1a5c8;
+  --content-bg: #f8f7ff;
+  --content-dark-bg: #f0f2ff;
+  --sidebar-hover-bg: #f0f2ff;
+  --card-content-bg: #f8f7ff;
+  --switcher-bg: #f0f2ff;
+  --dark-bg-alt-start: #1e293b;
+  --dark-bg-alt-mid: #334155;
+  --secondary-color: #6b7280;
+  --border-hover-color: #d1c5e8;
+  
+  /* 额外的变量用于ResourceMarket组件 */
+  --bg-gradient: var(--gradient-bg);
+  --bg-card: var(--card-bg);
+  --bg-card-hover: var(--card-hover);
+  --bg-input: var(--input-bg);
+  --bg-tag: var(--primary-color-light);
+  --bg-icon: var(--icon-bg);
+  --bg-glow: rgba(124, 58, 237, 0.03);
+  --focus-ring: 0 0 0 2px var(--primary-color-light);
+  --shadow-large: 0 16px 40px rgba(124, 58, 237, 0.45);
+  --btn-primary-bg: var(--primary-gradient);
+  --btn-primary-hover: linear-gradient(135deg, #6d28d9 0%, #5e35b1 100%);
+  --btn-primary-text: white;
+  
+  /* 额外的按钮和卡片样式变量 */
+  --bg-button: var(--bg-card);
+  --bg-button-hover: var(--bg-card-hover);
+  --bg-button-active: var(--bg-tertiary);
+  --border-button: var(--border-primary);
+  --shadow-card: 0 3px 10px rgba(124, 58, 237, 0.2);
+  --shadow-primary: 0 5px 15px rgba(124, 58, 237, 0.3);
+  --shadow-hover: 0 8px 25px rgba(124, 58, 237, 0.35);
+  
+  /* 额外的颜色变量 */
+  --accent-color: var(--accent-primary);
+  --text-muted: var(--text-tertiary);
+  --gradient-success: linear-gradient(135deg, #67c23a, #85ce61);
+  --gradient-warning: linear-gradient(135deg, #e6a23c, #f7ba2a);
+  --gradient-primary-hover: linear-gradient(135deg, #3b5bdb 0%, #4c6ef5 100%);
+  --bg-error: #7f1d1d;
+  --border-tag: var(--border-light);
+  --bg-tag-hover: var(--bg-tertiary);
+  --link-color: var(--primary-color);
+  --link-hover: var(--accent-primary);
+  
+  /* 弹窗专用变量 - 更轻盈的设计 */
+  --dialog-bg: var(--card-bg);
+  --dialog-border: var(--border-light);
+  --dialog-shadow: 0 8px 40px rgba(124, 58, 237, 0.08);
+  --dialog-shadow-hover: 0 12px 48px rgba(124, 58, 237, 0.12);
+  --dialog-header-bg: var(--card-bg);
+  --dialog-header-border: var(--border-light);
+  --dialog-title-color: var(--text-primary);
+  --dialog-subtitle-color: var(--text-tertiary);
+  --dialog-body-bg: var(--card-bg);
+  --dialog-footer-bg: var(--card-bg);
+  --dialog-footer-border: var(--border-light);
+  --dialog-glow: 0 0 0 1px var(--border-light), 0 0 20px rgba(124, 58, 237, 0.03);
+  --dialog-glow-hover: 0 0 0 1px var(--border-primary), 0 0 30px rgba(124, 58, 237, 0.06);
+  
+  /* 轻量hover效果 */
+  --hover-icon-bg: #faf9ff; /* 图标hover背景 */
+  --hover-button-bg: #faf9ff; /* 按钮hover背景 */
+}
+
+/* 暗色模式变量 - 蓝色-黑（偏紫）渐变色调 */
+.dark {
+  --bg-primary: #0a0e27; /* 极深的蓝紫色 */
+  --bg-secondary: #151932; /* 深蓝紫色 */
+  --bg-tertiary: #1e2444; /* 中等深蓝紫色 */
+  --text-primary: #f0f4ff; /* 带上微弱蓝色色相的白色 */
+  --text-secondary: #e0e8ff; /* 带上微弱蓝色色相的浅色 */
+  --text-tertiary: #d0d8ff; /* 带上微弱蓝色色相的深色 */
+  --text-on-primary: #f0f4ff; /* 带上微弱蓝色色相的白色 */
+  --border-primary: #4a5074; /* 更浅的深蓝紫边框，大幅增加对比度 */
+  --border-secondary: #5a6084; /* 中等浅深蓝紫边框 */
+  --border-tertiary: #6a7094; /* 浅深蓝紫边框 */
+  --border-light: #2a3054;
+  --accent-primary: #4c6ef5; /* 蓝色主色调 */
+  --accent-secondary: #3b5bdb; /* 深蓝色 */
+  --accent-warning: #e6a23c;
+  --accent-danger: #f56c6c;
+  --info-color: #409eff;
+  --warning-color: #e6a23c;
+  --bg-warning: #3b3220;
+  --primary-color: #4c6ef5; /* 蓝色主色调 */
+  --primary-color-light: rgba(76, 110, 245, 0.2);
+  --danger-color: #f56c6c;
+  --danger-bg: #7f1d1d;
+  --danger-border: #991b1b;
+  --gradient-primary: linear-gradient(135deg, #4c6ef5, #7c3aed); /* 蓝色到紫色渐变 */
+  --gradient-danger: linear-gradient(135deg, #f56c6c, #e53e3e);
+  --gradient-bg: linear-gradient(135deg, #0a0e27, #1e2444); /* 蓝黑渐变背景 */
+  --gradient-overlay: linear-gradient(135deg, rgba(76, 110, 245, 0.05), rgba(124, 58, 237, 0.05));
+  --primary-gradient: linear-gradient(135deg, #4c6ef5, #7c3aed); /* 蓝色到紫色渐变 */
+  --shadow-light: rgba(76, 110, 245, 0.1);
+  --shadow-medium: rgba(76, 110, 245, 0.15);
+  --shadow-heavy: rgba(76, 110, 245, 0.2);
+  --card-glow: 0 0 15px rgba(76, 110, 245, 0.3);
+  --card-edge-glow: 0 0 20px rgba(76, 110, 245, 0.4);
+  --card-bg: #151932; /* 深蓝紫色 */
+  --card-hover: #1e2444; /* 中等深蓝紫色 */
+  --sidebar-bg: #151932; /* 深蓝紫色 */
+  --chat-bg: #151932; /* 深蓝紫色 */
+  --input-bg: #1e2444; /* 中等深蓝紫色 */
+  --icon-bg: #1e2444; /* 中等深蓝紫色 */
+  --icon-active-bg: #4c6ef5; /* 蓝色 */
+  --hover-bg: #252b4a; /* 暗色模式下稍微变浅 */
+  --gradient-start: #0a0e27; /* 极深的蓝紫色 */
+  --gradient-mid: #151932; /* 深蓝紫色 */
+  --gradient-end: #1e2444; /* 中等深蓝紫色 */
+  --gradient-dark-start: #0a0e27; /* 极深的蓝紫色 */
+  --gradient-dark-end: #1e2444; /* 中等深蓝紫色 */
+  --primary-blue: #4c6ef5; /* 蓝色-白色（偏紫）的渐变 */
+  --primary-purple: #7c3aed; /* 紫色-白色（偏蓝）的渐变 */
+  --primary-accent-mid: #5a67d8; /* 柔和的蓝紫色 */
+  --primary-gradient-start: #0a0e27; /* 深蓝紫色 */
+  --primary-gradient-mid: #151932; /* 中性深色 */
+  --primary-gradient-end: #1e2444; /* 深蓝紫色 */
+  --primary-blue-light: #6366f1; /* 蓝色-白色（偏紫）的渐变 */
+  --primary-accent-end: #1e2444; /* 深蓝紫色结束色 */
+  --border-color: #2a3054;
+  --shadow-color: rgba(76, 110, 245, 0.1);
+  --hover-shadow-color: rgba(76, 110, 245, 0.2);
+  --scrollbar-track: #151932;
+  --scrollbar-thumb: #363c64;
+  --scrollbar-thumb-hover: #424874;
+  --content-bg: #151932;
+  --content-dark-bg: #1e2444;
+  --sidebar-hover-bg: #1e2444;
+  --card-content-bg: #151932;
+  --switcher-bg: #1e2444;
+  --dark-bg-start: #0a0e27;
+  --dark-bg-mid: #151932;
+  --dark-bg-end: #1e2444;
+  --dark-bg-alt-start: #151932;
+  --dark-bg-alt-mid: #1e2444;
+  --dark-text: #f0f4ff;
+  --dark-border: #2a3054;
+  --dark-accent-start: #1e40af;
+  --dark-accent-mid: #3730a3;
+  --dark-accent-end: #5b21b6;
+  --dark-accent-blue: #4c6ef5;
+  --dark-accent-purple: #7c3aed;
+  --secondary-color: #9ca3af;
+  --border-hover-color: #363c64;
+  
+  /* 轻量hover效果 */
+  --hover-icon-bg: #1a1f3a; /* 图标hover背景 */
+  --hover-button-bg: #1a1f3a; /* 按钮hover背景 */
+  
+  /* 额外的变量用于ResourceMarket组件 */
+  --bg-gradient: var(--gradient-bg);
+  --bg-card: var(--card-bg);
+  --bg-card-hover: var(--card-hover);
+  --bg-input: var(--input-bg);
+  --bg-tag: var(--primary-color-light);
+  --bg-icon: var(--icon-bg);
+  --bg-glow: rgba(76, 110, 245, 0.05);
+  --focus-ring: 0 0 0 2px var(--primary-color-light);
+  --shadow-large: 0 8px 25px rgba(76, 110, 245, 0.25);
+  --btn-primary-bg: var(--primary-gradient);
+  --btn-primary-hover: linear-gradient(135deg, #3b5bdb 0%, #4c6ef5 100%);
+  --btn-primary-text: white;
+  
+  /* 额外的按钮和卡片样式变量 */
+  --bg-button: var(--bg-card);
+  --bg-button-hover: var(--bg-card-hover);
+  --bg-button-active: var(--bg-tertiary);
+  --border-button: var(--border-primary);
+  --shadow-card: 0 3px 10px rgba(124, 58, 237, 0.2);
+  --shadow-primary: 0 5px 15px rgba(124, 58, 237, 0.3);
+  --shadow-hover: 0 8px 25px rgba(124, 58, 237, 0.35);
+  
+  /* 额外的颜色变量 */
+  --accent-color: var(--accent-primary);
+  --text-muted: var(--text-tertiary);
+  --gradient-success: linear-gradient(135deg, #67c23a, #85ce61);
+  --gradient-warning: linear-gradient(135deg, #e6a23c, #f7ba2a);
+  --gradient-primary-hover: linear-gradient(135deg, #3b5bdb 0%, #4c6ef5 100%);
+  --bg-error: #7f1d1d;
+  --border-tag: var(--border-light);
+  --bg-tag-hover: var(--bg-tertiary);
+  --link-color: var(--primary-color);
+  --link-hover: var(--accent-primary);
+  
+  /* 弹窗专用变量 - 更轻盈的设计 */
+  --dialog-bg: var(--card-bg);
+  --dialog-border: var(--border-light);
+  --dialog-shadow: 0 8px 40px rgba(124, 58, 237, 0.08);
+  --dialog-shadow-hover: 0 12px 48px rgba(124, 58, 237, 0.12);
+  --dialog-header-bg: var(--card-bg);
+  --dialog-header-border: var(--border-light);
+  --dialog-title-color: var(--text-primary);
+  --dialog-subtitle-color: var(--text-tertiary);
+  --dialog-body-bg: var(--card-bg);
+  --dialog-footer-bg: var(--card-bg);
+  --dialog-footer-border: var(--border-light);
+  --dialog-glow: 0 0 0 1px var(--border-light), 0 0 20px rgba(124, 58, 237, 0.03);
+  --dialog-glow-hover: 0 0 0 1px var(--border-primary), 0 0 30px rgba(124, 58, 237, 0.06);
+  
+  /* 轻量hover效果 */
+  --hover-icon-bg: #faf9ff; /* 图标hover背景 */
+  --hover-button-bg: #faf9ff; /* 按钮hover背景 */
+}
+
+/* 全局基础样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+#app {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-secondary);
+}
+
+/* 动画效果 */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* 通用类 */
+.slide-in {
+  animation: slideIn 0.5s ease-out;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 卡片样式 */
+.card {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 var(--shadow-light);
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 20px 0 var(--shadow-medium);
+  transform: translateY(-2px);
+}
+
+/* 按钮样式 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  outline: none;
+}
+
+.btn-primary {
+  background-color: var(--accent-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #66b1ff;
+}
+
+.btn-secondary {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+}
+
+.btn-secondary:hover {
+  background-color: var(--hover-bg);
+}
+
+/* 输入框样式 */
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+/* 主题切换按钮样式 */
+.theme-toggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: var(--accent-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px var(--shadow-medium);
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px var(--shadow-heavy);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .btn {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+  
+  .input {
+    padding: 6px 10px;
+  }
+}
+
+/* =========================> 通用弹窗样式 <========================== */
+/* 轻盈的弹窗设计 - 使用边缘光和投影进行视觉分层 */
+
+:deep(.el-dialog) {
+  background: var(--dialog-bg);
+  border: 1px solid var(--dialog-border);
+  border-radius: 16px;
+  box-shadow: var(--dialog-shadow);
+  backdrop-filter: blur(20px);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+:deep(.el-dialog:hover) {
+  box-shadow: var(--dialog-shadow-hover);
+  border-color: var(--border-primary);
+}
+
+/* 弹窗头部 - 去除高饱和度背景 */
+:deep(.el-dialog__header) {
+  background: var(--dialog-header-bg);
+  border-bottom: 1px solid var(--dialog-header-border);
+  padding: 20px 24px;
+  margin: 0;
+  position: relative;
+}
+
+:deep(.el-dialog__header::after) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--border-primary) 50%, transparent 100%);
+  opacity: 0.5;
+}
+
+:deep(.el-dialog__title) {
+  color: var(--dialog-title-color);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+:deep(.el-dialog__headerbtn) {
+  top: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--card-hover);
+  border: 1px solid var(--border-light);
+  transition: all 0.3s ease;
+}
+
+:deep(.el-dialog__headerbtn:hover) {
+  background: var(--card-bg);
+  border-color: var(--border-primary);
+  transform: scale(1.05);
+}
+
+:deep(.el-dialog__headerbtn .el-dialog__close) {
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+:deep(.el-dialog__headerbtn:hover .el-dialog__close) {
+  color: var(--text-primary);
+}
+
+/* 弹窗主体 */
+:deep(.el-dialog__body) {
+  background: var(--dialog-body-bg);
+  padding: 0;
+  color: var(--text-primary);
+}
+
+/* 弹窗底部 */
+:deep(.el-dialog__footer) {
+  background: var(--dialog-footer-bg);
+  border-top: 1px solid var(--dialog-footer-border);
+  padding: 16px 24px;
+  position: relative;
+}
+
+:deep(.el-dialog__footer::before) {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 24px;
+  right: 24px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--border-primary) 50%, transparent 100%);
+  opacity: 0.5;
+}
+
+/* 弹窗内容区域通用样式 */
+.dialog-content {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.dialog-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.dialog-section:hover {
+  border-color: var(--border-primary);
+  box-shadow: var(--shadow-light);
+  transform: translateY(-1px);
+}
+
+.dialog-section-title {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dialog-section-title::before {
+  content: '';
+  width: 3px;
+  height: 16px;
+  background: var(--primary-color);
+  border-radius: 2px;
+}
+
+/* 弹窗按钮样式 */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.dialog-btn {
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-light);
+}
+
+.dialog-btn-cancel {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border-color: var(--border-primary);
+}
+
+.dialog-btn-cancel:hover {
+  background: var(--card-hover);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-light);
+}
+
+.dialog-btn-confirm {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.dialog-btn-confirm:hover {
+  background: var(--accent-secondary);
+  border-color: var(--accent-secondary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-medium);
+}
+
+/* 滚动条优化 */
+.dialog-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dialog-content::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 3px;
+}
+
+.dialog-content::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+.dialog-content::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* 暗色模式弹窗样式 */
+.dark :deep(.el-dialog) {
+  background: var(--dialog-bg);
+  border: 1px solid var(--dialog-border);
+  box-shadow: var(--dialog-shadow);
+}
+
+.dark :deep(.el-dialog:hover) {
+  box-shadow: var(--dialog-shadow-hover);
+  border-color: var(--border-primary);
+}
+
+.dark :deep(.el-dialog__header) {
+  background: var(--dialog-header-bg);
+  border-bottom: 1px solid var(--dialog-header-border);
+}
+
+.dark :deep(.el-dialog__title) {
+  color: var(--dialog-title-color);
+}
+
+.dark :deep(.el-dialog__headerbtn) {
+  background: var(--card-hover);
+  border: 1px solid var(--border-light);
+}
+
+.dark :deep(.el-dialog__headerbtn:hover) {
+  background: var(--card-bg);
+  border-color: var(--border-primary);
+}
+
+.dark :deep(.el-dialog__headerbtn .el-dialog__close) {
+  color: var(--text-secondary);
+}
+
+.dark :deep(.el-dialog__headerbtn:hover .el-dialog__close) {
+  color: var(--text-primary);
+}
+
+.dark :deep(.el-dialog__body) {
+  background: var(--dialog-body-bg);
+  color: var(--text-primary);
+}
+
+.dark :deep(.el-dialog__footer) {
+  background: var(--dialog-footer-bg);
+  border-top: 1px solid var(--dialog-footer-border);
+}
+
+.dark .dialog-section {
+  background: var(--card-bg);
+  border: 1px solid var(--border-light);
+}
+
+.dark .dialog-section:hover {
+  border-color: var(--border-primary);
+  box-shadow: var(--shadow-light);
+}
+
+.dark .dialog-section-title {
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.dark .dialog-btn-cancel {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border-color: var(--border-primary);
+}
+
+.dark .dialog-btn-cancel:hover {
+  background: var(--card-hover);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
+}
+
+.dark .dialog-btn-confirm {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.dark .dialog-btn-confirm:hover {
+  background: var(--accent-secondary);
+  border-color: var(--accent-secondary);
+}
+
+.dark .dialog-content::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+.dark .dialog-content::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
+
+.dark .dialog-content::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
