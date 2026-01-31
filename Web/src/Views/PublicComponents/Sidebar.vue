@@ -4,7 +4,7 @@ import {useUserStore} from "@/Stores/UserStore.ts";
 import {useAuthStore} from "@/Stores/AuthStore.ts";
 import {useThemeStore} from '@/Stores/ThemeStore.ts';
 import LogoBox from "@/Views/PublicComponents/LogoBox.vue";
-import {More, User as UserIcon, Setting, SwitchButton, ArrowLeftBold, Expand, Fold, Sunny, Moon} from '@element-plus/icons-vue'
+import {More, User as UserIcon, Setting, Money, SwitchButton, ArrowLeftBold, Expand, Fold, Sunny, Moon} from '@element-plus/icons-vue'
 import {useRouter} from "vue-router";
 import ProfileDialog from "@/Views/PublicComponents/ProfileDialog.vue";
 
@@ -42,6 +42,13 @@ const handleSetting = () => {
 }
 
 /**
+ * 处理资金系统
+ */
+const handleFundSystem = () => {
+  router.push('/payment')
+}
+
+/**
  * 处理登出
  */
 const handleLogout = () => {
@@ -64,6 +71,7 @@ const authData = useAuthStore();
 const dropdownList = [
   { name: '个人资料', command: 'profile', divided: false, icon: UserIcon, function: handleProfile},
   { name: '设置', command: 'settings', divided: false, icon: Setting, function: handleSetting },
+  { name: '资金系统', command: 'fund', divided: false, icon: Money, function: handleFundSystem },
   { name: '退出登录', command: 'logout', divided: true, icon: SwitchButton, function: handleLogout },
 ]
 const user = {

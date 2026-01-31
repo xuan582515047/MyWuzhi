@@ -37,6 +37,10 @@ const router = createRouter({
     path: '/tools',
     name: 'tools',
     component: () => import('@/Views/ToolCenter/index.vue')
+  },{
+    path: '/payment',
+    name: 'payment',
+    component: () => import('@/Views/Payment/index.vue')
   }],
 })
 
